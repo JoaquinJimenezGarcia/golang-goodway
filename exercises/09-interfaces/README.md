@@ -1,0 +1,1 @@
+Implement Shape/Rect/TotalArea.

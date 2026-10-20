@@ -1,0 +1,1 @@
+Batch helper for pipelines.

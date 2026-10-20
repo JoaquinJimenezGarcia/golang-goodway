@@ -1,0 +1,1 @@
+Parse SSE data lines.
