@@ -44,22 +44,6 @@ brew install pandoc typst
 ./scripts/build-pdfs.sh
 ```
 
-PDFs are already generated under [`pdfs/`](pdfs/) in sorted order (`00-…` through `55-…`).
-
-## Daily workflow
-
-1. Open the next unchecked item in [`curriculum/PROGRESS.md`](curriculum/PROGRESS.md).
-2. Read `pdfs/NN-….pdf` (or the Markdown under `lessons/`).
-3. In `exercises/NN-…/`, run `go test` and implement until green.
-4. Only then read `solutions/NN-…/`.
-5. Next day: delete your code and rewrite from memory; re-run `go test`.
-
-Maintainers can verify all reference solutions with:
-
-```bash
-./scripts/smoke_test.sh
-```
-
 ## Curriculum map
 
 | # | Title | Phase | Time | Lesson | PDF |

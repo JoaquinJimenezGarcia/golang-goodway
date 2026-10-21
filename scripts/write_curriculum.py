@@ -25,12 +25,64 @@ later = load("curriculum_data", SCRIPTS / "curriculum_data.py")
 GO_VERSION = "1.22.0"
 
 
+def exercise_readme_md(meta: dict, short: str = "") -> str:
+    objs = "\n".join(f"- {o}" for o in meta["objectives"])
+    guide = (meta.get("exercise_guide") or short or "").strip()
+    if not guide:
+        guide = (
+            f"Implement the stubs in this folder until `go test` (or `./test.sh`) passes. "
+            f"Every failing test names a behavior taught in **{meta['title']}**."
+        )
+    examples = (meta.get("exercise_examples") or "").strip()
+    if not examples:
+        examples = (
+            "Copy patterns from the lesson's worked Go examples. Prefer clear, idiomatic Go "
+            "over clever one-liners. Match test expectations exactly (including errors)."
+        )
+    slug = meta["slug"]
+    return f"""# Exercise: {meta['n']:02d}. {meta['title']}
+
+## Goal
+
+Convert reading into **retrievable skill**. The tests are the specification.
+
+## Concepts from the lesson
+
+{objs}
+
+## Task
+
+{guide}
+
+## Examples / expected behavior
+
+{examples}
+
+## How to work
+
+1. Read this README, then re-open `lessons/{slug}/lesson.md`.
+2. Run the tests once to get a failure checklist.
+3. Implement the smallest correct code; re-run after each function.
+4. When stuck, re-type a lesson example into a scratch file and adapt it.
+5. After green: explain each exported function in one sentence without looking.
+
+## Done when
+
+- Tests pass
+- You can rewrite tomorrow without peeking at today's solution
+
+**Do not open `solutions/{slug}/` until after a real attempt (15+ minutes).**
+"""
+
+
 def lesson_md(meta: dict, body: str) -> str:
     objs = "\n".join(f"- {o}" for o in meta["objectives"])
     pits = "\n".join(f"- {p}" for p in meta["pitfalls"])
     checks = "\n".join(f"{i}. {c}" for i, c in enumerate(meta["checks"], 1))
     reads = "\n".join(f"- {r}" for r in meta["reading"])
     slug = meta["slug"]
+    guide = (meta.get("exercise_guide") or "").strip()
+    guide_block = f"\n### What you will build\n\n{guide}\n" if guide else ""
     return f"""---
 title: "{meta['n']:02d}. {meta['title']}"
 ---
@@ -47,7 +99,7 @@ title: "{meta['n']:02d}. {meta['title']}"
 
 ## Prerequisites
 
-Complete prior numbered lessons. Type every example yourself.
+Complete prior numbered lessons. Type every example yourself — reading Go is not writing Go.
 
 {body.strip()}
 
@@ -57,7 +109,9 @@ Complete prior numbered lessons. Type every example yourself.
 
 ## Exercises
 
-Work in `exercises/{slug}/`. Read that folder's `README.md`.
+Work in `exercises/{slug}/`. Read that folder's `README.md` before you code.
+{guide_block}
+### Study loop
 
 - **A (Drill):** make unit tests pass with the simplest correct code.
 - **B (Apply):** extend with an edge case called out in the exercise README.
@@ -66,6 +120,8 @@ Work in `exercises/{slug}/`. Read that folder's `README.md`.
 **Do not open `solutions/{slug}/` until you have an honest failing attempt.**
 
 ## Self-check
+
+Answer without scrolling up:
 
 {checks}
 
@@ -2609,8 +2665,12 @@ def write_early_exercise(m: dict):
     pkg_dir_name = ex.get("subdir") or "."
     ex_root = ROOT / "exercises" / slug
     sol_root = ROOT / "solutions" / slug
+    readme = exercise_readme_md(m, ex.get("readme", ""))
+    sol_readme = (
+        "Reference solution. Study after attempting.\n\n"
+        "Compare idioms, then rewrite from memory tomorrow.\n"
+    )
 
-    files = {}
     pkg = ex["pkg"]
     if pkg_dir_name == ".":
         write_go_module(
@@ -2619,7 +2679,7 @@ def write_early_exercise(m: dict):
             {
                 f"{pkg}.go": ex["starter"],
                 f"{pkg}_test.go": ex["test"],
-                "README.md": ex["readme"],
+                "README.md": readme,
             },
         )
         write_go_module(
@@ -2627,7 +2687,7 @@ def write_early_exercise(m: dict):
             mod,
             {
                 f"{pkg}.go": ex["solution"],
-                "README.md": "Reference solution. Study after attempting.\n",
+                "README.md": sol_readme,
             },
         )
         return
@@ -2635,26 +2695,37 @@ def write_early_exercise(m: dict):
     # nested package e.g. mathx with external test package
     ex_root.mkdir(parents=True, exist_ok=True)
     (ex_root / "go.mod").write_text(f"module {mod}\n\ngo {GO_VERSION}\n", encoding="utf-8")
-    (ex_root / "README.md").write_text(ex["readme"], encoding="utf-8")
+    (ex_root / "README.md").write_text(readme, encoding="utf-8")
     sub = ex_root / pkg_dir_name
     sub.mkdir(parents=True, exist_ok=True)
     (sub / f"{pkg}.go").write_text(ex["starter"], encoding="utf-8")
     (ex_root / f"{pkg}_export_test.go").write_text(ex["test"], encoding="utf-8")
     sol_root.mkdir(parents=True, exist_ok=True)
     (sol_root / "go.mod").write_text(f"module {mod}\n\ngo {GO_VERSION}\n", encoding="utf-8")
-    (sol_root / "README.md").write_text("Reference solution.\n", encoding="utf-8")
+    (sol_root / "README.md").write_text(sol_readme, encoding="utf-8")
     ssub = sol_root / pkg_dir_name
     ssub.mkdir(parents=True, exist_ok=True)
     (ssub / f"{pkg}.go").write_text(ex["solution"], encoding="utf-8")
 
 
-def write_kind_exercise(slug: str, kind: str):
+def write_kind_exercise(m: dict):
+    slug = m["slug"]
+    kind = m["ex_kind"]
     if kind not in EX_KIND:
         raise SystemExit(f"missing exercise kind {kind} for {slug}")
-    pkg, files, sol_files, readme = EX_KIND[kind](slug)
+    pkg, files, sol_files, short_readme = EX_KIND[kind](slug)
     mod = f"goodway/exercises/{slug}"
+    readme = exercise_readme_md(m, short_readme)
     write_go_module(ROOT / "exercises" / slug, mod, {**files, "README.md": readme})
-    write_go_module(ROOT / "solutions" / slug, mod, {**sol_files, "README.md": "Reference solution. Study after attempting.\n"})
+    write_go_module(
+        ROOT / "solutions" / slug,
+        mod,
+        {
+            **sol_files,
+            "README.md": "Reference solution. Study after attempting.\n\n"
+            "Compare idioms, then rewrite from memory tomorrow.\n",
+        },
+    )
 
 
 def normalize_early():
@@ -2775,7 +2846,7 @@ def main():
         if m["n"] <= 8:
             write_early_exercise(m)
         else:
-            write_kind_exercise(m["slug"], m["ex_kind"])
+            write_kind_exercise(m)
 
     write_readme(all_meta)
     (ROOT / "curriculum").mkdir(exist_ok=True)

@@ -1,1 +1,35 @@
-Retry with attempts + context.
+# Exercise: 43. Cloud SDK Patterns: Config, Retries, Pagination
+
+## Goal
+
+Convert reading into **retrievable skill**. The tests are the specification.
+
+## Concepts from the lesson
+
+- Configure clients via env/role credentials
+- Retry with exponential backoff + jitter
+- Paginate list APIs correctly
+- Treat cloud APIs as unreliable networks
+
+## Task
+
+Implement retry/backoff helper per tests.
+
+## Examples / expected behavior
+
+Attempt n waits base*2^n (or as specified).
+
+## How to work
+
+1. Read this README, then re-open `lessons/43-cloud-sdk-patterns/lesson.md`.
+2. Run the tests once to get a failure checklist.
+3. Implement the smallest correct code; re-run after each function.
+4. When stuck, re-type a lesson example into a scratch file and adapt it.
+5. After green: explain each exported function in one sentence without looking.
+
+## Done when
+
+- Tests pass
+- You can rewrite tomorrow without peeking at today's solution
+
+**Do not open `solutions/43-cloud-sdk-patterns/` until after a real attempt (15+ minutes).**
